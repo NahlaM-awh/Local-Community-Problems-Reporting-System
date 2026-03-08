@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="user-interface">
+
+<!-- Google Maps API - Requires valid API key from Google Cloud Console -->
+<!-- To enable Maps: 1) Get API key from https://console.cloud.google.com/ 2) Replace below with your key -->
+<!-- <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&libraries=places"></script> -->
+
+<div class="user-header">
+    <div class="header-content">
+        <h1>📝 Report an Issue</h1>
+        <div class="header-actions">
+            <span class="user-info">👤 {{ username }}</span>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </div>
+</div>
+
+<div class="user-container">
+    <div class="form-section">
+        <div class="form-card">
+            <h2>Submit a New Complaint</h2>
+            <p class="form-description">Let us know about any issues in your community</p>
+            
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <select id="category" onchange="toggleOtherCategory()">
+                    <option value="">-- Select Category --</option>
+                    <option value="Broken road">🚗 Broken road</option>
+                    <option value="Overflowing dustbins">🗑️ Overflowing dustbins</option>
+                    <option value="Water leakage in pipelines">💧 Water leakage in pipelines</option>
+                    <option value="No water supply">🚱 No water supply</option>
+                    <option value="Drainage blockage">🚫 Drainage blockage</option>
+                    <option value="Broken CCTV cameras">📹 Broken CCTV cameras</option>
+                    <option value="Loose electric wires">⚡ Loose electric wires</option>
+                    <option value="Public toilets not clean">🚻 Public toilets not clean</option>
+                    <option value="Mosquito breeding areas">🦟 Mosquito breeding areas</option>
+                    <option value="Pothole">🚗 Pothole</option>
+                    <option value="Garbage">🗑️ Garbage</option>
+                    <option value="Streetlight">💡 Streetlight</option>
+                    <option value="Infrastructure">🏗️ Infrastructure</option>
+                    <option value="Other">➕ Other (specify below)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="other-category-group" style="display:none;">
+                <label for="other-category">Other category:</label>
+                <input type="text" id="other-category" placeholder="Describe the problem category (e.g., Damaged park bench)">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" placeholder="Describe the issue in detail..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="proof-image">📸 Proof Image (Optional):</label>
+                <input type="file" id="proof-image" accept="image/*" class="location-input" style="padding: 8px;">
+                <div id="image-preview" style="margin-top: 10px; display: none;">
+                    <img id="preview-img" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 2px solid #667eea;">
+                    <button type="button" onclick="clearImage()" class="location-btn" style="margin-top: 8px; padding: 8px; font-size: 12px;">Remove Image</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Location:</label>
+                <div class="location-tabs">
+                    <button type="button" class="location-tab active" data-method="manual" onclick="switchLocationMethod('manual')">
+                        📍 Manual Address
+                    </button>
+                    <button type="button" class="location-tab" data-method="map" onclick="switchLocationMethod('map')">
+                        🗺️ Google Maps
+                    </button>
+                    <button type="button" class="location-tab" data-method="gps" onclick="switchLocationMethod('gps')">
+                        📡 GPS Location
+                    </button>
+                </div>
+
+                <!-- Manual Address Input -->
+                <div id="manual-location" class="location-method active">
+                    <input type="text" id="location" placeholder="Enter street address, landmark, or location name..." class="location-input">
+                </div>
+
+                <!-- Google Maps Input -->
+                <div id="map-location" class="location-method" style="display: none;">
+                    <input type="text" id="map-search" placeholder="Search on map..." class="location-input">
+                    <button type="button" class="location-btn" onclick="initMap()">Load Map</button>
+                    <div style="margin-top: 10px; padding: 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px; font-size: 13px; color: #856404;">
+                        <strong>⚙️ Setup Required:</strong> To use Google Maps, add your API key to <code style="background: white; padding: 2px 6px; border-radius: 3px;">templates/index.html</code>. <a href="https://console.cloud.google.com/" target="_blank" style="color: #0066cc;">Get API Key</a>
+                    </div>
+                    <div id="map-container" style="display: none; margin-top: 10px; border-radius: 8px; overflow: hidden; height: 300px;">
+                        <div id="map"></div>
+                    </div>
+                    <input type="hidden" id="map-location-value" placeholder="Selected from map">
+                </div>
+
+                <!-- GPS Location Input -->
+                <div id="gps-location" class="location-method" style="display: none;">
+                    <button type="button" class="location-btn gps-btn" onclick="getGPSLocation()">
+                        📍 Get My Current Location
+                    </button>
+                    <div id="gps-status" style="margin-top: 10px; font-size: 13px;"></div>
+                    <input type="hidden" id="gps-location-value">
+                </div>
+            </div>
+
+            <button onclick="submitComplaint()" class="submit-btn">Submit Complaint</button>
+        </div>
+    </div>
+
+    <div class="status-section">
+        <h2>📬 Notifications</h2>
+        <div id="userNotificationsContainer" style="margin-bottom: 30px;">
+            <p class="loading-text">Loading notifications...</p>
+        </div>
+    </div>
+
+    <div class="status-section">
+        <h2>Your Complaints</h2>
+        <div style="margin-bottom: 15px;">
+            <a href="/complaints-dashboard" class="view-public-btn">📊 View Public Complaints</a>
+        </div>
+        <div id="userComplaintsContainer" class="complaints-list">
+            <p class="loading-text">Loading your complaints...</p>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

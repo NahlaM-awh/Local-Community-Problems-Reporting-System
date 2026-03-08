@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Public Complaints Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="user-interface">
+
+<div class="user-header">
+    <div class="header-content">
+        <h1>📋 Community Complaints Dashboard</h1>
+        <div class="header-actions">
+            {% if username %}
+                <span class="user-info">👤 {{ username }}</span>
+                <a href="/user-dashboard" class="logout-btn">Back to Dashboard</a>
+                <a href="/logout" class="logout-btn">Logout</a>
+            {% else %}
+                <a href="/" class="logout-btn">Back to Home</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="user-container" style="grid-template-columns: 1fr;">
+    <div class="form-section">
+        <h2>Community Complaints</h2>
+        <p class="form-description">View all public complaints reported in the community</p>
+        
+        <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <input type="text" id="searchInput" placeholder="Search by location, category..." class="location-input" style="flex: 1; min-width: 200px;">
+            
+            <select id="statusFilter" class="location-input" style="min-width: 150px;">
+                <option value="">All Status</option>
+                <option value="Pending">Pending</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Resolved">Resolved</option>
+            </select>
+            
+            <select id="priorityFilter" class="location-input" style="min-width: 150px;">
+                <option value="">All Priority</option>
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+                <option value="Emergency">Emergency</option>
+            </select>
+        </div>
+        
+        <div id="complaintsContainer" class="complaints-list">
+            <p class="loading-text">Loading community complaints...</p>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+<script>
+// Load public complaints on page load
+document.addEventListener("DOMContentLoaded", function() {
+    loadPublicComplaints();
+    
+    // Add event listeners for filters
+    document.getElementById("searchInput").addEventListener("keyup", filterPublicComplaints);
+    document.getElementById("statusFilter").addEventListener("change", filterPublicComplaints);
+    document.getElementById("priorityFilter").addEventListener("change", filterPublicComplaints);
+});
+
+let allPublicComplaints = [];
+
+function loadPublicComplaints() {
+    fetch("/public-complaints")
+    .then(res => res.json())
+    .then(data => {
+        allPublicComplaints = data;
+        displayPublicComplaints(data);
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        document.getElementById("complaintsContainer").innerHTML = '<p class="loading-text">❌ Failed to load complaints</p>';
+    });
+}
+
+function displayPublicComplaints(data) {
+    const container = document.getElementById("complaintsContainer");
+    
+    if (data.length === 0) {
+        container.innerHTML = '<p class="loading-text">📭 No complaints reported yet.</p>';
+        return;
+    }
+    
+    container.innerHTML = "";
+    
+    const complaintGrid = document.createElement("div");
+    complaintGrid.style.display = "grid";
+    complaintGrid.style.gridTemplateColumns = "repeat(auto-fill, minmax(350px, 1fr))";
+    complaintGrid.style.gap = "20px";
+    
+    data.forEach(complaint => {
+        let statusClass = "status-pending";
+        if (complaint.status === "In Progress") statusClass = "status-in-progress";
+        if (complaint.status === "Resolved") statusClass = "status-resolved";
+        
+        let priorityClass = "priority-low";
+        if (complaint.priority === "Medium") priorityClass = "priority-medium";
+        if (complaint.priority === "High") priorityClass = "priority-high";
+        if (complaint.priority === "Emergency") priorityClass = "priority-emergency";
+        
+        const dateSubmitted = complaint.submitted_at ? 
+            new Date(complaint.submitted_at).toLocaleDateString('en-US', {
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric'
+            }) : "N/A";
+        const supportCount = complaint.support_count || 0;
+        const rating = complaint.rating || null;
+        const feedback = complaint.feedback || "";
+
+        let ratingDisplay = "";
+        let feedbackDisplay = "";
+
+        if (rating) {
+            const filled = "★".repeat(rating);
+            const empty = "☆".repeat(5 - rating);
+            ratingDisplay = `<div style="margin-top:4px; font-size:13px; color:#f1c40f;">${filled}${empty} <span style="color:#555; margin-left:4px;">(${rating}/5)</span></div>`;
+        }
+
+        if (feedback) {
+            // Shorten very long feedback for public view
+            const shortFeedback = feedback.length > 120 ? feedback.substring(0, 117) + "..." : feedback;
+            feedbackDisplay = `<p style="margin:6px 0 0 0; font-size:13px; color:#555;"><strong>User Feedback:</strong> ${shortFeedback}</p>`;
+        }
+        
+        const complaintCard = document.createElement("div");
+        complaintCard.className = "public-complaint-card";
+        complaintCard.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+                <div>
+                    <h3 style="margin: 0; color: #333; font-size: 16px;">#${complaint.id} - ${complaint.category}</h3>
+                    <p style="margin: 4px 0 0 0; color: #666; font-size: 12px;">📅 ${dateSubmitted}</p>
+                </div>
+                <span class="${priorityClass}" style="font-size: 11px; padding: 4px 8px;">${complaint.priority}</span>
+            </div>
+            <div style="margin: 12px 0;">
+                <p style="margin: 0 0 8px 0; color: #999; font-size: 12px; text-transform: uppercase;">Location</p>
+                <p style="margin: 0; color: #333; font-size: 14px; font-weight: 500;">📍 ${complaint.location}</p>
+                ${ratingDisplay}
+                ${feedbackDisplay}
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 12px; border-top: 1px solid #eee;">
+                <span class="${statusClass}">${complaint.status}</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="support-badge" data-complaint-id="${complaint.id}" style="font-size: 13px; color: #555;">
+                        👍 ${supportCount} people supported
+                    </span>
+                    <button class="view-public-btn" style="padding: 6px 10px; font-size: 12px;" onclick="handleSupportClick(${complaint.id})">
+                        Support
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        complaintGrid.appendChild(complaintCard);
+    });
+    
+    container.appendChild(complaintGrid);
+}
+
+function filterPublicComplaints() {
+    const searchTerm = document.getElementById("searchInput").value.toLowerCase();
+    const statusFilter = document.getElementById("statusFilter").value;
+    const priorityFilter = document.getElementById("priorityFilter").value;
+    
+    let filtered = allPublicComplaints;
+    
+    // Filter by search term
+    if (searchTerm) {
+        filtered = filtered.filter(c => 
+            c.category.toLowerCase().includes(searchTerm) ||
+            c.location.toLowerCase().includes(searchTerm) ||
+            c.id.toString().includes(searchTerm)
+        );
+    }
+    
+    // Filter by status
+    if (statusFilter) {
+        filtered = filtered.filter(c => c.status === statusFilter);
+    }
+    
+    // Filter by priority
+    if (priorityFilter) {
+        filtered = filtered.filter(c => c.priority === priorityFilter);
+    }
+    
+    if (filtered.length === 0) {
+        document.getElementById("complaintsContainer").innerHTML = '<p class="loading-text">🔍 No complaints match your filters.</p>';
+    } else {
+        displayPublicComplaints(filtered);
+    }
+}
+
+function handleSupportClick(complaintId) {
+    supportComplaint(complaintId, function(newCount) {
+        const badge = document.querySelector(`.support-badge[data-complaint-id="${complaintId}"]`);
+        if (badge) {
+            badge.textContent = `👍 ${newCount} people supported`;
+        }
+        // Also update local cache so filtering keeps counts in sync
+        allPublicComplaints = allPublicComplaints.map(c => 
+            c.id === complaintId ? { ...c, support_count: newCount } : c
+        );
+    });
+}
+</script>
+</body>
+</html>

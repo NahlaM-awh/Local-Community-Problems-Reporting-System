@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-interface">
+
+<div class="admin-header">
+    <div class="header-content">
+        <h1>🔧 Admin Control Panel</h1>
+        <div class="header-actions">
+            <a href="/admin-profile" class="user-info" style="text-decoration:none;">👤 {{ username }}</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </div>
+</div>
+
+<div class="admin-container">
+    <div class="admin-sidebar">
+        <nav class="admin-nav">
+            <h3>Dashboard</h3>
+            <ul>
+                <li class="active"><a href="#" onclick="filterComplaints('all')">All Complaints</a></li>
+                <li><a href="#" onclick="filterComplaints('Pending')">Pending</a></li>
+                <li><a href="#" onclick="filterComplaints('In Progress')">In Progress</a></li>
+                <li><a href="#" onclick="filterComplaints('Resolved')">Resolved</a></li>
+            </ul>
+            <h3 style="margin-top: 30px;">Management</h3>
+            <ul>
+                <li><a href="/admin-users">Users Dashboard</a></li>
+                <li><a href="/admin-workers">Workers Dashboard</a></li>
+            </ul>
+        </nav>
+        <div class="stats-box">
+            <h3>Quick Stats</h3>
+            <div id="statsContainer"></div>
+        </div>
+    </div>
+
+    <div class="admin-main">
+        <div class="section-header">
+            <h2>Manage All Complaints</h2>
+            <input type="text" id="filterInput" placeholder="Search complaints..." class="filter-input">
+        </div>
+        <div id="complaintList" class="complaints-table-container"></div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

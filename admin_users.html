@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Users Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="admin-interface">
+
+<div class="admin-header">
+    <div class="header-content">
+        <h1>👥 Users Management</h1>
+        <div class="header-actions">
+            <a href="/admin-profile" class="user-info" style="text-decoration:none;">👤 {{ username }}</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </div>
+</div>
+
+<div class="admin-container">
+    <div class="admin-sidebar">
+        <nav class="admin-nav">
+            <h3>Dashboard</h3>
+            <ul>
+                <li><a href="/admin-dashboard">All Complaints</a></li>
+                <li><a href="/admin-dashboard" onclick="event.preventDefault(); filterComplaints('Pending');">Pending</a></li>
+                <li><a href="/admin-dashboard" onclick="event.preventDefault(); filterComplaints('In Progress');">In Progress</a></li>
+                <li><a href="/admin-dashboard" onclick="event.preventDefault(); filterComplaints('Resolved');">Resolved</a></li>
+            </ul>
+            <h3 style="margin-top: 30px;">Management</h3>
+            <ul>
+                <li class="active"><a href="/admin-users">Users Dashboard</a></li>
+                <li><a href="/admin-workers">Workers Dashboard</a></li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="admin-main">
+        <div class="section-header">
+            <h2>Manage Users</h2>
+        </div>
+
+        {% if error %}
+            <div style="padding: 12px 16px; margin-bottom: 16px; border-radius: 6px; background:#fdecea; color:#c0392b; border:1px solid #f5c6cb;">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        {% if success %}
+            <div style="padding: 12px 16px; margin-bottom: 16px; border-radius: 6px; background:#e8f5e9; color:#2e7d32; border:1px solid #c8e6c9;">
+                {{ success }}
+            </div>
+        {% endif %}
+
+        <div style="display:grid; grid-template-columns: 1.1fr 1.4fr; gap:24px; align-items:start;">
+            <div class="form-section" style="padding:20px; border-radius:8px; background:#f9f9f9;">
+                <h3 style="margin-top:0; margin-bottom:12px;">Add New User</h3>
+                <p style="margin-top:0; color:#666; font-size:13px;">Create a new user account with username, email, and password.</p>
+
+                <form method="POST" action="/admin-users/add">
+                    <div class="form-group">
+                        <label for="new-username">Username</label>
+                        <input type="text" id="new-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-email">Email</label>
+                        <input type="email" id="new-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-password">Password</label>
+                        <input type="text" id="new-password" name="password" required>
+                    </div>
+                    <button type="submit" class="submit-btn" style="width:100%;">Add User</button>
+                </form>
+            </div>
+
+            <div class="status-section" style="padding:20px; border-radius:8px; background:#ffffff;">
+                <h3 style="margin-top:0; margin-bottom:12px;">Existing Users</h3>
+                {% if users_list and users_list|length > 0 %}
+                    <div style="max-height:500px; overflow-y:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                            <thead>
+                                <tr style="background:#f5f7fa;">
+                                    <th style="text-align:left; padding:8px; border-bottom:1px solid #e0e0e0;">Username</th>
+                                    <th style="text-align:left; padding:8px; border-bottom:1px solid #e0e0e0;">Email</th>
+                                    <th style="text-align:left; padding:8px; border-bottom:1px solid #e0e0e0;">Password</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for u in users_list %}
+                                <tr>
+                                    <td style="padding:8px; border-bottom:1px solid #f0f0f0; font-weight:600; color:#333;">{{ u.username }}</td>
+                                    <td style="padding:8px; border-bottom:1px solid #f0f0f0; color:#555;">{{ u.email }}</td>
+                                    <td style="padding:8px; border-bottom:1px solid #f0f0f0; color:#999;">{{ u.password }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="loading-text">No users found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
+
+

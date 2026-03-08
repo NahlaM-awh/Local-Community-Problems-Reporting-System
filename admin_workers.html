@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Workers Management - Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .admin-interface {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-content h1 {
+            margin: 0;
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .user-info {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+        
+        .logout-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .logout-btn:hover {
+            background: #ff5252;
+        }
+        
+        .back-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        
+        .back-btn:hover {
+            background: #5568d3;
+        }
+        
+        .workers-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .section-header h2 {
+            margin: 0;
+        }
+        
+        .workers-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .worker-card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-top: 4px solid #667eea;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .worker-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        }
+        
+        .worker-card h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 18px;
+        }
+        
+        .worker-detail {
+            display: flex;
+            align-items: center;
+            margin: 12px 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .worker-detail strong {
+            margin-right: 10px;
+            color: #333;
+            min-width: 80px;
+        }
+        
+        .detail-value {
+            word-break: break-word;
+        }
+        
+        .categories-list {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
+        }
+        
+        .categories-list strong {
+            display: block;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .category-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .category-badge {
+            background: #667eea;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .filter-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .filter-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        .filter-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .filter-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .no-workers {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            background: white;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="admin-interface">
+
+<div class="admin-header">
+    <div class="header-content">
+        <h1>👷 Workers Management</h1>
+        <div class="header-actions">
+            <a href="/admin-profile" class="user-info" style="text-decoration:none;">👤 {{ username }}</a>
+            <a href="/admin-dashboard" class="back-btn">← Back to Dashboard</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </div>
+</div>
+
+<div class="workers-container">
+    <div class="filter-section">
+        <h3>Filter by Category</h3>
+        <div class="filter-options">
+            <button class="filter-btn active" onclick="filterWorkers('all')">All Workers</button>
+            <button class="filter-btn" onclick="filterWorkers('Pothole')">Pothole</button>
+            <button class="filter-btn" onclick="filterWorkers('Garbage')">Garbage</button>
+            <button class="filter-btn" onclick="filterWorkers('Streetlight')">Streetlight</button>
+            <button class="filter-btn" onclick="filterWorkers('Infrastructure')">Infrastructure</button>
+            <button class="filter-btn" onclick="filterWorkers('Water')">Water</button>
+            <button class="filter-btn" onclick="filterWorkers('Power')">Power</button>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <h2>All Workers (<span id="workerCount">0</span>)</h2>
+    </div>
+
+    <div class="workers-grid" id="workersContainer">
+        <div class="no-workers">Loading workers...</div>
+    </div>
+</div>
+
+<script>
+let allWorkers = [];
+
+async function loadWorkers() {
+    try {
+        const response = await fetch('/workers');
+        if (response.ok) {
+            allWorkers = await response.json();
+            displayWorkers(allWorkers);
+        }
+    } catch (error) {
+        console.error('Error loading workers:', error);
+        document.getElementById('workersContainer').innerHTML = 
+            '<div class="no-workers">Error loading workers</div>';
+    }
+}
+
+function displayWorkers(workersToDisplay) {
+    const container = document.getElementById('workersContainer');
+    document.getElementById('workerCount').textContent = workersToDisplay.length;
+    
+    if (workersToDisplay.length === 0) {
+        container.innerHTML = '<div class="no-workers">No workers found</div>';
+        return;
+    }
+    
+    let html = '';
+    workersToDisplay.forEach(worker => {
+        html += `
+            <div class="worker-card">
+                <h3>${worker.name}</h3>
+                <div class="worker-detail">
+                    <strong>📞</strong>
+                    <span class="detail-value">${worker.phone}</span>
+                </div>
+                <div class="worker-detail">
+                    <strong>📧</strong>
+                    <span class="detail-value">${worker.email}</span>
+                </div>
+                <div class="worker-detail">
+                    <strong>👤</strong>
+                    <span class="detail-value">${worker.username}</span>
+                </div>
+                <div class="categories-list">
+                    <strong>Assigned Categories:</strong>
+                    <div class="category-badges">
+                        ${worker.categories.map(cat => `<span class="category-badge">${cat}</span>`).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+async function filterWorkers(category) {
+    // Update active button
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    if (category === 'all') {
+        displayWorkers(allWorkers);
+    } else {
+        try {
+            const response = await fetch(`/workers/category/${category}`);
+            if (response.ok) {
+                const filteredWorkers = await response.json();
+                displayWorkers(filteredWorkers);
+            }
+        } catch (error) {
+            console.error('Error filtering workers:', error);
+        }
+    }
+}
+
+// Load workers on page load
+window.addEventListener('DOMContentLoaded', loadWorkers);
+</script>
+</body>
+</html>
